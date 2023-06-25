@@ -5,10 +5,22 @@ from dash import html
 from dash.dependencies import Input, Output
 
 data = pd.read_csv('output.csv')
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=["style.css"])
 app.layout = html.Div(
     children=[
         html.H1("Sales Data Visualization"),  # Header
+        dcc.RadioItems(
+            id="region-filter",
+            options=[
+                {"label": "North", "value": "north"},
+                {"label": "East", "value": "east"},
+                {"label": "South", "value": "south"},
+                {"label": "West", "value": "west"},
+                {"label": "All", "value": "all"},
+            ],
+            value="all",
+            labelStyle={"display": "inline-block"}
+        ),
         dcc.Graph(id="sales-chart")  # Line chart
     ]
 )
@@ -16,19 +28,24 @@ app.layout = html.Div(
 
 @app.callback(
     Output("sales-chart", "figure"),
-    Input("sales-chart", "id")
+    Input("region-filter", "value")
 )
-def update_chart(_):
+def update_chart(selected_region):
+    if selected_region == "all":
+        filtered_data = data  # Show all data
+    else:
+        filtered_data = data[data["region"] == selected_region]
+
     figure = {
         "data": [
             {
-                "x": data["date"],  # x-axis: date
-                "y": data["sales"],  # y-axis: sales
+                "x": filtered_data["date"],  # x-axis: date
+                "y": filtered_data["sales"],  # y-axis: sales
                 "type": "line"
             }
         ],
         "layout": {
-            "title": "Sales Trend",
+            "title": f"Sales Trend - Region: {selected_region.capitalize()}",
             "xaxis": {"title": "Date"},
             "yaxis": {"title": "Sales"}
         }
